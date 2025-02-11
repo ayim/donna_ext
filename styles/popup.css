@@ -116,4 +116,40 @@ button:hover {
 .action-upvote {
   background-color: #e8f5e9;
   color: #2e7d32;
+}
+
+.api-request-item {
+  padding: 10px;
+  margin: 5px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.request-url {
+  font-weight: bold;
+  word-break: break-all;
+}
+
+.request-method {
+  display: inline-block;
+  padding: 2px 6px;
+  background-color: #e0e0e0;
+  border-radius: 3px;
+  margin: 5px 0;
+}
+
+.request-headers {
+  font-size: 12px;
+  background-color: #fff;
+  padding: 5px;
+  border-radius: 3px;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.request-time {
+  color: #666;
+  font-size: 12px;
+  margin-top: 5px;
 } 
