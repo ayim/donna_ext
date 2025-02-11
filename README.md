@@ -44,7 +44,7 @@ That’s what Donna does. We don’t just store information—we help LLMs conne
 ### Move Forward
 
 - [ ] Suggest next steps based on attachments and history
-- [ ] Add an agent and ask to permissions to provide evidnence.
+- [ ] Set permissions for what we send MCP agent and call it to do a task.
 
 
 ## Demo
@@ -65,4 +65,7 @@ It suggests two tasks:
 - It hasn't seen me look for accommodations, it should suggest some based on my tastes and browsing history.
 - There is a JetPurple app that can book my flights, suggest that I use it and show exactly what I will expose.
 - I can also chat.
+
+Decisions:
+- Should we just use MCP or build an API platform?
 
