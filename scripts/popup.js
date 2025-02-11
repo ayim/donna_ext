@@ -1,5 +1,45 @@
 document.addEventListener('DOMContentLoaded', function() {
   const tabsList = document.getElementById('tabsList');
+  const redditActionsList = document.getElementById('redditActionsList');
+
+  // Function to format timestamp
+  function formatTime(timestamp) {
+    return new Date(timestamp).toLocaleString();
+  }
+
+  // Function to render Reddit actions
+  function renderRedditActions() {
+    chrome.storage.local.get(null, function(data) {
+      redditActionsList.innerHTML = '';
+      
+      // Filter for Reddit action entries
+      Object.entries(data)
+        .filter(([key, value]) => value.isRedditAction)
+        .sort((a, b) => b[1].timestamp - a[1].timestamp)
+        .forEach(([key, action]) => {
+          const actionElement = document.createElement('div');
+          actionElement.className = 'reddit-action-item';
+          
+          const titleElement = document.createElement('div');
+          titleElement.className = 'reddit-action-title';
+          titleElement.textContent = action.postTitle || 'Reddit Post';
+          
+          const detailsElement = document.createElement('div');
+          detailsElement.innerHTML = `
+            <span class="reddit-action-subreddit">r/${action.subreddit}</span>
+            <span class="reddit-action-type action-${action.action}">${action.action}</span>
+            <div class="tab-status ${action.success ? 'status-success' : 'status-error'}">
+              ${action.message}
+            </div>
+            <div class="tab-access-time">${formatTime(action.timestamp)}</div>
+          `;
+          
+          actionElement.appendChild(titleElement);
+          actionElement.appendChild(detailsElement);
+          redditActionsList.appendChild(actionElement);
+        });
+    });
+  }
 
   // Query for all tabs in all windows
   chrome.tabs.query({}, function(tabs) {
@@ -56,5 +96,15 @@ document.addEventListener('DOMContentLoaded', function() {
         tabsList.appendChild(tabElement);
       });
     });
+  });
+
+  // Initial render of Reddit actions
+  renderRedditActions();
+
+  // Listen for storage changes to update Reddit actions
+  chrome.storage.onChanged.addListener(function(changes, namespace) {
+    if (namespace === 'local') {
+      renderRedditActions();
+    }
   });
 }); 

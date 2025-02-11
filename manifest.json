@@ -7,6 +7,7 @@
     "tabs",
     "storage",
     "scripting",
+    "webRequest",
     "https://*.pinecone.io/*"
   ],
   "host_permissions": [
@@ -28,5 +29,11 @@
   "background": {
     "service_worker": "scripts/background.js",
     "type": "module"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.reddit.com/*"],
+      "js": ["scripts/reddit-observer.js"]
+    }
+  ]
 } 

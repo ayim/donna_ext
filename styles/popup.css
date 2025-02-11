@@ -76,4 +76,44 @@ button {
 
 button:hover {
   background-color: #45a049;
+}
+
+.reddit-actions-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 20px;
+}
+
+.reddit-action-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  font-size: 13px;
+}
+
+.reddit-action-title {
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+.reddit-action-subreddit {
+  color: #1a75ff;
+  font-size: 12px;
+}
+
+.reddit-action-type {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  margin-left: 5px;
+}
+
+.action-save {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.action-upvote {
+  background-color: #e8f5e9;
+  color: #2e7d32;
 } 
