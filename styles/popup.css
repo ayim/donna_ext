@@ -147,10 +147,31 @@ h2 {
 }
 
 .tab-status {
+  position: relative;
   font-size: 11px;
   margin-top: 5px;
   padding: 2px 5px;
   border-radius: 3px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.delete-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: #d32f2f;
+  background-color: transparent;
+  border: 1px solid #d32f2f;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-btn:hover {
+  background-color: #d32f2f;
+  color: white;
 }
 
 .status-success {
@@ -174,16 +195,25 @@ h2 {
   border-bottom: 2px solid #eee;
 }
 
-.toggle-section {
+.activity-header {
   display: flex;
-  justify-content: flex-end;
-  margin-bottom: 20px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.activity-header h2 {
+  margin: 0;
 }
 
 .pinecone-toggle {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.toggle-section {
+  display: none;
 }
 
 .ai-title {
@@ -401,4 +431,28 @@ input:checked + .slider:before {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.projects-btn {
+  padding: 6px 16px;
+  font-size: 13px;
+  color: #1a1a1a;
+  background-color: #fff;
+  border: 1px solid #1a1a1a;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Playfair Display', serif;
+  letter-spacing: 0.02em;
+}
+
+.projects-btn:hover {
+  background-color: #1a1a1a;
+  color: #fff;
 } 

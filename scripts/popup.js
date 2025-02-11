@@ -22,28 +22,25 @@ document.addEventListener('DOMContentLoaded', function() {
   `;
   mainContainer.appendChild(header);
 
-  // Create toggle section
-  const toggleSection = document.createElement('div');
-  toggleSection.className = 'toggle-section';
-  toggleSection.innerHTML = `
-    <div class="pinecone-toggle">
-      <label class="switch">
-        <input type="checkbox" id="pineconeToggle" checked>
-        <span class="slider round"></span>
-      </label>
-      <span class="toggle-label">Donna-ing</span>
-    </div>
-  `;
-
-  // Insert toggle after header and before tabs
-  mainContainer.appendChild(toggleSection);
-
   // Create unified activity list container
   const activityContainer = document.createElement('div');
   activityContainer.className = 'activity-container';
 
-  const activityHeader = document.createElement('h2');
-  activityHeader.textContent = 'Recent Activity';
+  const activityHeader = document.createElement('div');
+  activityHeader.className = 'activity-header';
+  activityHeader.innerHTML = `
+    <h2>Recent Activity</h2>
+    <div class="header-actions">
+      <button class="projects-btn" id="projectsBtn">Projects</button>
+      <div class="pinecone-toggle">
+        <label class="switch">
+          <input type="checkbox" id="pineconeToggle" checked>
+          <span class="slider round"></span>
+        </label>
+        <span class="toggle-label">On</span>
+      </div>
+    </div>
+  `;
 
   const activityList = document.createElement('div');
   activityList.id = 'activityList';
@@ -120,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="activity-time">${formatTime(activity.timestamp)}</div>
             <div class="tab-status ${activity.pineconeStatus?.isTemp ? 'temp-message' : ''} ${activity.pineconeStatus ? (activity.pineconeStatus.success ? 'status-success' : 'status-error') : 'status-pending'}">
               ${activity.pineconeStatus ? activity.pineconeStatus.message : 'Not sent to Pinecone'}
-              ${activity.pineconeStatus?.success && !activity.pineconeStatus?.isTemp ? `<button class="delete-btn" data-id="tab_${tab.id}">Delete from Pinecone</button>` : ''}
+              ${activity.pineconeStatus?.success && !activity.pineconeStatus?.isTemp ? `<button class="delete-btn" data-id="tab_${tab.id}">Delete</button>` : ''}
             </div>
           </div>
         `;
@@ -149,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="activity-time">${formatTime(activity.timestamp)}</div>
             <div class="tab-status ${activity.pineconeStatus?.isTemp ? 'temp-message' : ''} ${activity.pineconeStatus ? (activity.pineconeStatus.success ? 'status-success' : 'status-error') : 'status-pending'}">
               ${activity.pineconeStatus ? activity.pineconeStatus.message : 'Not sent to Pinecone'}
-              ${activity.pineconeStatus?.success && !activity.pineconeStatus?.isTemp ? `<button class="delete-btn" data-id="reddit_${activity.timestamp}_${actionType}">Delete from Pinecone</button>` : ''}
+              ${activity.pineconeStatus?.success && !activity.pineconeStatus?.isTemp ? `<button class="delete-btn" data-id="reddit_${activity.timestamp}_${actionType}">Delete</button>` : ''}
             </div>
           </div>
         `;
@@ -247,13 +244,34 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // Update the tab update listener
   chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.url || (changeInfo.status === 'complete' && tab.url)) {
-      sendToPinecone(tab);
+    // Send to Pinecone when a page loads or URL changes
+    if (changeInfo.status === 'complete' && tab.url) {
+      console.log('Tab completed loading:', { tabId, url: tab.url });
+      
+      // Record access time
       const accessData = {
         [`tab_${tabId}_access`]: Date.now()
       };
       chrome.storage.local.set(accessData);
+
+      // Send to Pinecone
+      sendToPinecone(tab);
+      renderActivity();
+    }
+    // Also send when URL changes (for single page apps)
+    else if (changeInfo.url) {
+      console.log('Tab URL changed:', { tabId, url: changeInfo.url });
+      
+      // Record access time
+      const accessData = {
+        [`tab_${tabId}_access`]: Date.now()
+      };
+      chrome.storage.local.set(accessData);
+
+      // Send to Pinecone
+      sendToPinecone(tab);
       renderActivity();
     }
   });
@@ -272,6 +290,11 @@ document.addEventListener('DOMContentLoaded', function() {
   pineconeToggle.addEventListener('change', (e) => {
     const enabled = e.target.checked;
     chrome.storage.local.set({ pineconeEnabled: enabled });
+  });
+
+  // Add the click handler for the projects button
+  document.getElementById('projectsBtn').addEventListener('click', () => {
+    chrome.tabs.create({ url: 'https://www.notion.so/your-projects-page' });
   });
 });
 
