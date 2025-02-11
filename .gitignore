@@ -1,0 +1,3 @@
+# Ignore configuration files with sensitive data
+config/keys.js 
+text_pinecone.js
