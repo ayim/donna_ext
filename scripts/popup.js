@@ -5,119 +5,179 @@ document.addEventListener('DOMContentLoaded', function() {
   // Create main container
   const mainContainer = document.createElement('div');
   mainContainer.className = 'container';
+  
+  // Add header with AI name
+  const header = document.createElement('div');
+  header.className = 'header';
+  header.innerHTML = `
+    <div class="ai-title">
+      <div class="title-group">
+        <img src="icons/notion-avatar-1739246648562.png" class="ai-logo" alt="Donna AI Logo">
+        <div class="title-text">
+          <h1>Donna AI</h1>
+          <p class="subtitle">Because an assistant should know what you need—even before you do.</p>
+        </div>
+      </div>
+    </div>
+  `;
+  mainContainer.appendChild(header);
+
+  // Create toggle section
+  const toggleSection = document.createElement('div');
+  toggleSection.className = 'toggle-section';
+  toggleSection.innerHTML = `
+    <div class="pinecone-toggle">
+      <label class="switch">
+        <input type="checkbox" id="pineconeToggle" checked>
+        <span class="slider round"></span>
+      </label>
+      <span class="toggle-label">Donna-ing</span>
+    </div>
+  `;
+
+  // Insert toggle after header and before tabs
+  mainContainer.appendChild(toggleSection);
+
+  // Create unified activity list container
+  const activityContainer = document.createElement('div');
+  activityContainer.className = 'activity-container';
+
+  const activityHeader = document.createElement('h2');
+  activityHeader.textContent = 'Recent Activity';
+
+  const activityList = document.createElement('div');
+  activityList.id = 'activityList';
+  activityList.className = 'activity-list';
+
+  activityContainer.appendChild(activityHeader);
+  activityContainer.appendChild(activityList);
+  mainContainer.appendChild(activityContainer);
+
+  // Add the main container to the document body
   document.body.appendChild(mainContainer);
-
-  // Create tabs container
-  const tabsContainer = document.createElement('div');
-  tabsContainer.className = 'tabs-container';
-  
-  const tabsHeader = document.createElement('h2');
-  tabsHeader.textContent = 'Active Tabs';
-  
-  const tabsList = document.createElement('div');
-  tabsList.id = 'tabsList';
-  tabsList.className = 'tabs-list';
-  
-  tabsContainer.appendChild(tabsHeader);
-  tabsContainer.appendChild(tabsList);
-  mainContainer.appendChild(tabsContainer);
-
-  // Create API requests container
-  const apiRequestsContainer = document.createElement('div');
-  apiRequestsContainer.className = 'api-requests-container';
-  
-  const apiHeader = document.createElement('h2');
-  apiHeader.textContent = 'API Requests';
-  
-  const apiRequestsList = document.createElement('div');
-  apiRequestsList.id = 'apiRequestsList';
-  apiRequestsList.className = 'api-requests-list';
-  
-  apiRequestsContainer.appendChild(apiHeader);
-  apiRequestsContainer.appendChild(apiRequestsList);
-  mainContainer.appendChild(apiRequestsContainer);
 
   // Function to format timestamp
   function formatTime(timestamp) {
     return new Date(timestamp).toLocaleString();
   }
 
-  // Function to render tabs
-  function renderTabs() {
-    chrome.tabs.query({}, function(tabs) {
-      // Get all access times and Pinecone statuses first
-      const tabIds = tabs.map(tab => `tab_${tab.id}_access`);
-      const statusIds = tabs.map(tab => `tab_${tab.id}_pinecone_status`);
-      const allIds = [...tabIds, ...statusIds];
-      
-      chrome.storage.local.get(allIds, function(data) {
-        tabsList.innerHTML = '';
-        tabs.forEach(function(tab) {
-          const tabElement = document.createElement('div');
-          tabElement.className = 'tab-item';
-          
-          const accessTime = data[`tab_${tab.id}_access`];
-          const pineconeStatus = data[`tab_${tab.id}_pinecone_status`];
-          
-          // If no Pinecone status exists, send to Pinecone
-          if (!pineconeStatus) {
-            sendToPinecone(tab);
-          }
-          
-          tabElement.innerHTML = `
-            <div class="tab-title">${tab.title}</div>
-            <div class="tab-url">${tab.url}</div>
-            <div class="tab-access-time">
-              ${accessTime ? `Last accessed: ${formatTime(accessTime)}` : 'No access time recorded'}
-            </div>
-            <div class="tab-status ${pineconeStatus ? (pineconeStatus.success ? 'status-success' : 'status-error') : 'status-pending'}">
-              ${pineconeStatus ? pineconeStatus.message : 'Not sent to Pinecone'}
-              ${pineconeStatus?.success ? `<button class="delete-btn" data-id="tab_${tab.id}">Delete from Pinecone</button>` : ''}
-            </div>
-          `;
-          
-          // Add click handler to focus the tab
-          tabElement.addEventListener('click', function() {
-            chrome.tabs.update(tab.id, { active: true });
-            chrome.windows.update(tab.windowId, { focused: true });
-            
-            // Record access time
-            const accessData = {
-              [`tab_${tab.id}_access`]: Date.now()
-            };
-            chrome.storage.local.set(accessData);
-            
-            // Send to Pinecone
-            sendToPinecone(tab);
-          });
-          
-          // Add delete button click handler
-          const deleteBtn = tabElement.querySelector('.delete-btn');
-          if (deleteBtn) {
-            deleteBtn.addEventListener('click', async (e) => {
-              e.stopPropagation(); // Prevent tab focus
-              const id = e.target.dataset.id;
-              console.log('Starting tab deletion process:', { id });
-              
-              // Log the current storage state
-              chrome.storage.local.get(null, (data) => {
-                console.log('Current storage before deletion:', 
-                  Object.keys(data).filter(key => key.includes(id))
-                );
-              });
-              
-              await deleteFromPinecone(id, id);
-            });
-          }
-          
-          tabsList.appendChild(tabElement);
-        });
+  // Function to render activity
+  async function renderActivity() {
+    const activityList = document.getElementById('activityList');
+    activityList.innerHTML = '';
+
+    // Get all data from storage
+    const data = await chrome.storage.local.get(null);
+    const tabs = await chrome.tabs.query({});
+
+    // Prepare tabs data
+    const tabsData = tabs.map(tab => ({
+      type: 'tab',
+      timestamp: data[`tab_${tab.id}_access`] || Date.now(),
+      data: tab,
+      pineconeStatus: data[`tab_${tab.id}_pinecone_status`]
+    }));
+
+    // Prepare API requests data
+    const apiRequests = Object.entries(data)
+      .filter(([key, value]) => value.isApiRequest)
+      .flatMap(([key, request]) => {
+        if (!request.payload?.info) return [];
+        
+        return request.payload.info
+          .filter(event => 
+            event.noun === 'save' || 
+            event.noun === 'upvote' || 
+            event.noun === 'downvote' ||
+            (event.action === 'click' && event.noun === 'save')
+          )
+          .map(event => ({
+            type: 'reddit',
+            timestamp: request.timestamp,
+            data: event,
+            request: request,
+            pineconeStatus: data[`reddit_${request.timestamp}_${event.noun}_pinecone_status`]
+          }));
       });
+
+    // Combine and sort all activities
+    const allActivities = [...tabsData, ...apiRequests]
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 20); // Show last 20 activities
+
+    // Render each activity
+    allActivities.forEach(activity => {
+      const element = document.createElement('div');
+      element.className = 'activity-item';
+
+      if (activity.type === 'tab') {
+        const tab = activity.data;
+        element.innerHTML = `
+          <div class="activity-icon">🌐</div>
+          <div class="activity-content">
+            <div class="activity-title">${tab.title}</div>
+            <div class="activity-url">${tab.url}</div>
+            <div class="activity-time">${formatTime(activity.timestamp)}</div>
+            <div class="tab-status ${activity.pineconeStatus?.isTemp ? 'temp-message' : ''} ${activity.pineconeStatus ? (activity.pineconeStatus.success ? 'status-success' : 'status-error') : 'status-pending'}">
+              ${activity.pineconeStatus ? activity.pineconeStatus.message : 'Not sent to Pinecone'}
+              ${activity.pineconeStatus?.success && !activity.pineconeStatus?.isTemp ? `<button class="delete-btn" data-id="tab_${tab.id}">Delete from Pinecone</button>` : ''}
+            </div>
+          </div>
+        `;
+
+        // Add tab click handler
+        element.addEventListener('click', () => {
+          chrome.tabs.update(tab.id, { active: true });
+          chrome.windows.update(tab.windowId, { focused: true });
+        });
+
+      } else {
+        const event = activity.data;
+        const actionType = (event.action === 'click' && event.noun === 'save') ? 'save' : event.noun;
+        const subredditName = event.subreddit?.name || 'unknown';
+
+        element.innerHTML = `
+          <div class="activity-icon ${actionType}">
+            ${actionType === 'upvote' ? '⬆️' : actionType === 'downvote' ? '⬇️' : '💾'}
+          </div>
+          <div class="activity-content">
+            <div class="activity-action">${actionType.toUpperCase()}</div>
+            <div class="activity-subreddit">r/${subredditName}</div>
+            <div class="activity-url">Post URL: ${event.post.url}</div>
+            <div class="activity-canonical-url">Canonical URL: ${event.request?.canonical_url || 'N/A'}</div>
+            <div class="activity-nsfw">${event.post.nsfw ? '🔞 NSFW' : '✅ SFW'}</div>
+            <div class="activity-time">${formatTime(activity.timestamp)}</div>
+            <div class="tab-status ${activity.pineconeStatus?.isTemp ? 'temp-message' : ''} ${activity.pineconeStatus ? (activity.pineconeStatus.success ? 'status-success' : 'status-error') : 'status-pending'}">
+              ${activity.pineconeStatus ? activity.pineconeStatus.message : 'Not sent to Pinecone'}
+              ${activity.pineconeStatus?.success && !activity.pineconeStatus?.isTemp ? `<button class="delete-btn" data-id="reddit_${activity.timestamp}_${actionType}">Delete from Pinecone</button>` : ''}
+            </div>
+          </div>
+        `;
+      }
+
+      // Add delete button handlers
+      const deleteBtn = element.querySelector('.delete-btn');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = e.target.dataset.id;
+          await deleteFromPinecone(id, id);
+        });
+      }
+
+      activityList.appendChild(element);
     });
   }
 
   // Function to send tab data to Pinecone
   async function sendToPinecone(tab) {
+    // Check if Pinecone integration is enabled
+    const { pineconeEnabled } = await chrome.storage.local.get('pineconeEnabled');
+    if (pineconeEnabled === false) {
+      console.log('Pinecone integration is disabled');
+      return;
+    }
+
     try {
       const dummyVector = new Array(PINECONE_CONFIG.DIMENSION).fill(0.1);
       const vectorId = `tab_${tab.id}`; // This is the ID we'll use for deletion
@@ -164,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
       };
       
       chrome.storage.local.set(statusData);
-      renderTabs();
+      renderActivity();
     } catch (error) {
       console.error('Pinecone error:', error);
       const errorData = {
@@ -176,114 +236,43 @@ document.addEventListener('DOMContentLoaded', function() {
       };
       
       chrome.storage.local.set(errorData);
-      renderTabs();
+      renderActivity();
     }
   }
 
-  // Function to render API requests
-  function renderApiRequests() {
-    chrome.storage.local.get(null, function(data) {
-      apiRequestsList.innerHTML = '';
-      
-      const apiRequests = Object.entries(data)
-        .filter(([key, value]) => value.isApiRequest);
-      
-      if (apiRequests.length === 0) {
-        apiRequestsList.innerHTML = '<div class="no-requests">No API requests captured yet</div>';
-        return;
-      }
-      
-      apiRequests
-        .sort((a, b) => b[1].timestamp - a[1].timestamp)
-        .slice(0, 10)
-        .forEach(([key, request]) => {
-          if (!request.payload || !request.payload.info) return;
-          
-          const infoArray = request.payload.info;
-          const subredditInfo = infoArray.find(event => event.subreddit)?.subreddit;
-          
-          const relevantEvents = infoArray.filter(event => 
-            event.noun === 'save' || 
-            event.noun === 'upvote' || 
-            event.noun === 'downvote' ||
-            (event.action === 'click' && event.noun === 'save')
-          );
-          
-          relevantEvents.forEach(event => {
-            const requestElement = document.createElement('div');
-            requestElement.className = 'api-request-item';
-            
-            try {
-              const actionType = (event.action === 'click' && event.noun === 'save') ? 'save' : event.noun;
-              const {
-                post: { url, nsfw }
-              } = event;
-              
-              const subredditName = event.subreddit?.name || subredditInfo?.name || 'unknown';
-              const pineconeStatus = data[`reddit_${request.timestamp}_${actionType}_pinecone_status`];
-              
-              requestElement.innerHTML = `
-                <div class="request-action ${actionType.toLowerCase()}">
-                  ${actionType.toUpperCase()}
-                </div>
-                <div class="request-details">
-                  <div class="request-subreddit">r/${subredditName}</div>
-                  <div class="request-url">Post URL: ${event.post.url}</div>
-                  <div class="request-canonical-url">Canonical URL: ${event.request?.canonical_url || 'N/A'}</div>
-                  <div class="request-nsfw">${nsfw ? '🔞 NSFW' : '✅ SFW'}</div>
-                  <div class="tab-status ${pineconeStatus ? (pineconeStatus.success ? 'status-success' : 'status-error') : 'status-pending'}">
-                    ${pineconeStatus ? pineconeStatus.message : 'Not sent to Pinecone'}
-                    ${pineconeStatus?.success ? `<button class="delete-btn" data-id="reddit_${request.timestamp}_${actionType}">Delete from Pinecone</button>` : ''}
-                  </div>
-                </div>
-                <div class="request-time">${formatTime(request.timestamp)}</div>
-              `;
-              
-              // Add delete button click handler
-              const deleteBtn = requestElement.querySelector('.delete-btn');
-              if (deleteBtn) {
-                deleteBtn.addEventListener('click', async () => {
-                  await deleteFromPinecone(deleteBtn.dataset.id, `reddit_${request.timestamp}_${actionType}`);
-                });
-              }
-              
-              apiRequestsList.appendChild(requestElement);
-            } catch (error) {
-              console.error('Error processing event:', error);
-            }
-          });
-        });
-    });
-  }
-
-  // Initial renders
-  renderTabs();
-  renderApiRequests();
-
-  // Listen for storage changes and tab updates
-  chrome.storage.onChanged.addListener(function(changes, namespace) {
+  // Update event listeners to use new render function
+  chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'local') {
-      renderApiRequests();
-      renderTabs();
+      renderActivity();
     }
   });
 
-  // Listen for tab updates and send to Pinecone when URL changes
   chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    // Only process when URL changes and loading is complete
     if (changeInfo.url || (changeInfo.status === 'complete' && tab.url)) {
       sendToPinecone(tab);
-      
-      // Record access time
       const accessData = {
         [`tab_${tabId}_access`]: Date.now()
       };
       chrome.storage.local.set(accessData);
+      renderActivity();
     }
   });
 
-  // Remove the old onUpdated listener since we have it outside now
-  chrome.tabs.onRemoved.addListener(renderTabs);
+  chrome.tabs.onRemoved.addListener(renderActivity);
+
+  // Initial render
+  renderActivity();
+
+  // Add toggle functionality
+  const pineconeToggle = document.getElementById('pineconeToggle');
+  chrome.storage.local.get('pineconeEnabled', (data) => {
+    pineconeToggle.checked = data.pineconeEnabled !== false; // Default to true if not set
+  });
+
+  pineconeToggle.addEventListener('change', (e) => {
+    const enabled = e.target.checked;
+    chrome.storage.local.set({ pineconeEnabled: enabled });
+  });
 });
 
 // Listener for API requests
@@ -424,62 +413,70 @@ chrome.webRequest.onBeforeRequest.addListener(
   ["requestBody"]
 );
 
-// Update the delete function
+// Add an array of Donna quotes for deletion
+const DONNA_DELETE_QUOTES = [
+  "Consider it gone. Like that time Harvey tried casual Fridays.",
+  "I've made that disappear faster than Harvey's ego after losing a case.",
+  "Done and done. Now that's what I call getting rid of evidence.",
+  "Poof! Gone like Mike's fake Harvard degree.",
+  "Memory deleted. Just like I delete Harvey's blind dates from his calendar.",
+  "That's been handled. Because that's what I do.",
+  "Consider it shredded. Like the time Louis tried to grow a beard.",
+  "Gone. And unlike Rachel's cooking, this won't come back to haunt you.",
+  "I've taken care of that. Just like I take care of everything else around here."
+];
+
+// Update the deleteFromPinecone function
 async function deleteFromPinecone(id, type) {
   try {
     console.log('Deleting from Pinecone:', { id, type });
     
-    // Log the exact request we're sending
-    const deleteRequest = {
-      method: 'POST',
-      headers: {
-        'Api-Key': PINECONE_CONFIG.API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        namespace: '', // Add empty namespace
-        ids: [id],
-        deleteAll: false // Add deleteAll parameter
-      })
-    };
-    console.log('Delete request:', deleteRequest);
-    
     const response = await fetch(
       `https://${PINECONE_CONFIG.HOST}/vectors/delete`,
-      deleteRequest
+      {
+        method: 'POST',
+        headers: {
+          'Api-Key': PINECONE_CONFIG.API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          namespace: '',
+          ids: [id],
+          deleteAll: false
+        })
+      }
     );
-
-    const responseText = await response.text();
-    console.log('Delete response:', {
-      status: response.status,
-      text: responseText,
-      headers: Object.fromEntries(response.headers)
-    });
 
     if (!response.ok) {
-      throw new Error(`Failed to delete: ${response.status} ${responseText}`);
+      throw new Error(`Failed to delete: ${response.status}`);
     }
 
-    // Check storage before removal
-    const beforeStorage = await chrome.storage.local.get(null);
-    console.log('Storage before removal:', 
-      Object.keys(beforeStorage).filter(key => key.includes(id))
-    );
+    // Get a random Donna quote
+    const randomQuote = DONNA_DELETE_QUOTES[Math.floor(Math.random() * DONNA_DELETE_QUOTES.length)];
 
     // Use consistent status key format
     const statusKey = `${id}_pinecone_status`;
-    console.log('Attempting to remove status key:', statusKey);
     await chrome.storage.local.remove(statusKey);
-
-    // Check storage after removal
-    const afterStorage = await chrome.storage.local.get(null);
-    console.log('Storage after removal:', 
-      Object.keys(afterStorage).filter(key => key.includes(id))
-    );
     
-    // Re-render the UI
-    renderTabs();
-    renderApiRequests();
+    // Show the quote in a temporary status message
+    const tempStatusData = {
+      [statusKey]: {
+        success: true,
+        message: randomQuote,
+        timestamp: Date.now(),
+        isTemp: true
+      }
+    };
+    chrome.storage.local.set(tempStatusData);
+    
+    // Re-render immediately to show the quote
+    renderActivity();
+
+    // Remove the temporary message after 3 seconds
+    setTimeout(() => {
+      chrome.storage.local.remove(statusKey);
+      renderActivity();
+    }, 3000);
 
     return true;
   } catch (error) {
