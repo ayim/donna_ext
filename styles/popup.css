@@ -1,23 +1,124 @@
 .container {
   width: 400px;
   padding: 20px;
+  background-color: #fff;
 }
 
-h1 {
+h2 {
   font-size: 18px;
   color: #333;
   margin-bottom: 15px;
 }
 
+.api-request-item {
+  padding: 10px;
+  margin: 5px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.request-action {
+  font-weight: bold;
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.request-action.upvote {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #81c784;
+}
+
+.request-action.save {
+  background-color: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #64b5f6;
+}
+
+.request-details {
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 8px 0;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.request-subreddit {
+  color: #1a75ff;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.request-url {
+  color: #666;
+  word-break: break-all;
+  margin-bottom: 4px;
+}
+
+.request-canonical-url {
+  color: #666;
+  word-break: break-all;
+  margin-bottom: 4px;
+  font-style: italic;
+}
+
+.request-nsfw {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+}
+
+.request-time {
+  color: #666;
+  font-size: 12px;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+.api-requests-container {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.api-requests-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.no-requests {
+  padding: 10px;
+  color: #666;
+  font-style: italic;
+  text-align: center;
+}
+
+.tabs-container {
+  margin-bottom: 20px;
+}
+
 .tabs-list {
-  max-height: 500px;
+  max-height: 200px;
   overflow-y: auto;
 }
 
 .tab-item {
   padding: 10px;
-  border-bottom: 1px solid #eee;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  margin-bottom: 5px;
   cursor: pointer;
+  background-color: #fff;
 }
 
 .tab-item:hover {
@@ -26,7 +127,8 @@ h1 {
 
 .tab-title {
   font-weight: bold;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
+  color: #333;
 }
 
 .tab-url {
@@ -62,94 +164,4 @@ h1 {
 .status-pending {
   color: #9E9E9E;
   background-color: #F5F5F5;
-}
-
-button {
-  background-color: #4CAF50;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-button:hover {
-  background-color: #45a049;
-}
-
-.reddit-actions-list {
-  max-height: 300px;
-  overflow-y: auto;
-  margin-top: 20px;
-}
-
-.reddit-action-item {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-  font-size: 13px;
-}
-
-.reddit-action-title {
-  font-weight: bold;
-  margin-bottom: 3px;
-}
-
-.reddit-action-subreddit {
-  color: #1a75ff;
-  font-size: 12px;
-}
-
-.reddit-action-type {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-  margin-left: 5px;
-}
-
-.action-save {
-  background-color: #e3f2fd;
-  color: #1565c0;
-}
-
-.action-upvote {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
-
-.api-request-item {
-  padding: 10px;
-  margin: 5px 0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: #f9f9f9;
-}
-
-.request-url {
-  font-weight: bold;
-  word-break: break-all;
-}
-
-.request-method {
-  display: inline-block;
-  padding: 2px 6px;
-  background-color: #e0e0e0;
-  border-radius: 3px;
-  margin: 5px 0;
-}
-
-.request-headers {
-  font-size: 12px;
-  background-color: #fff;
-  padding: 5px;
-  border-radius: 3px;
-  max-height: 100px;
-  overflow-y: auto;
-}
-
-.request-time {
-  color: #666;
-  font-size: 12px;
-  margin-top: 5px;
 } 
